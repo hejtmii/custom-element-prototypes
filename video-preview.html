@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <script src="custom-element.js"></script>
+    <iframe id="frm_0" frameborder="0" height="0"></iframe>
+    <script>
+        var frame = document.getElementById('frm_0');
+        var src;
+        var height = 0;
+        var width = 0;
+
+        function setupPreview(host, id) {
+            switch (host) {
+                case 'vimeo':
+                    src = 'https://player.vimeo.com/video/' + id + '?title=0&byline=0&portrait=0';
+                    width = 640;
+                    height = 360;
+                    break;
+
+                case 'youtube':
+                    src = 'https://www.youtube.com/embed/' + id;
+                    width = 560;
+                    height = 315;
+                    break;
+            }
+
+            frame.src = src;
+            frame.setAttribute('width', width);
+            frame.setAttribute('height', height);
+            frame.setAttribute('allowfullscreen', '');
+            frame.setAttribute('webkitallowfullscreen', '');
+            frame.setAttribute('mozallowfullscreen', '');
+
+            CustomElement.setSize({ height });
+        }
+
+        if (frame) {
+            CustomElement.getElementValue('video_host', function(data) {
+                var host = (data.value || [])[0];
+                CustomElement.getElementValue('video_id', function (data) {
+                    var id = data.value;
+                    setupPreview(host, id);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

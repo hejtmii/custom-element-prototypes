@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .mce-container {
+            box-sizing: border-box !important;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="mce_0" aria-hidden="true">
+    </textarea>
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@4.8.2/tinymce.min.js"></script>
+    <script src="custom-element.js"></script>
+    <script>
+        tinymce.init({
+            selector: 'textarea',
+            height: 500,
+            menubar: false,
+            plugins: [
+                'advlist autolink lists link image charmap print preview anchor textcolor',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table contextmenu paste code help wordcount'
+            ],
+            toolbar: 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+            content_css: [
+            ],
+            setup: function (editor) {
+                editor.on('init', function () {
+                    function updateSize() {
+                        CustomElement.setSize({
+                            height: editor.editorContainer.getBoundingClientRect().height,
+                        });
+                    }
+
+                    window.addEventListener('resize', updateSize);
+                    updateSize();
+
+                    CustomElement.getValue(function (response) {
+                        editor.setContent(response.value || '');
+                    });
+
+                    editor.on('change', function() {
+                        CustomElement.setValue(editor.getContent());
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
