@@ -38,7 +38,7 @@ var CustomElementClass = function() {
             registerCallback('get-value-response', cb);
             sendMessage('get-value');
         },
-        setValue: function (cb) {
+        setValue: function (value, cb) {
             registerCallback('set-value-response', cb);
             sendMessage('set-value', { value });
         },
@@ -53,6 +53,14 @@ var CustomElementClass = function() {
         setSize: function (size, cb) {
             registerCallback('set-size-response', cb);
             sendMessage('set-size', size);
+        },
+        observeChanges: function (elementIds, cb) {
+            var repetitiveCb = function (data) {
+              cb(data);
+              registerCallback('elements-changed', repetitiveCb)
+            };
+            registerCallback('elements-changed', repetitiveCb);
+            sendMessage('observe-changes', { elementIds });
         }
     };
 };

@@ -33,6 +33,8 @@
             ],
             setup: function (editor) {
                 editor.on('init', function () {
+                    var editorChangeHandler;
+
                     function updateSize() {
                         CustomElement.setSize({
                             height: editor.editorContainer.getBoundingClientRect().height,
@@ -46,8 +48,11 @@
                         editor.setContent(response.value || '');
                     });
 
-                    editor.on('change', function() {
-                        CustomElement.setValue(editor.getContent());
+                    editor.on('Paste Change Input Undo Redo', function() {
+                        if (editorChangeHandler) {clearTimeout(editorChangeHandler);}
+                        editorChangeHandler = setTimeout(function() {
+                            CustomElement.setValue(editor.getContent());
+                        }, 100);
                     });
                 });
             }

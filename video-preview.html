@@ -43,7 +43,7 @@
             CustomElement.setSize({ height });
         }
 
-        if (frame) {
+        function reload() {
             CustomElement.getElementValue('video_host', function(data) {
                 var host = (data.value || [])[0];
                 CustomElement.getElementValue('video_id', function (data) {
@@ -51,6 +51,12 @@
                     setupPreview(host, id);
                 });
             });
+        }
+
+        if (frame) {
+            reload();
+
+            CustomElement.observeChanges([], reload);
         }
     </script>
 </body>
