@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="custom-element.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<textarea id="editor"></textarea>
+<script>
+    var editor = new SimpleMDE({
+        element: document.getElementById("editor"),
+        spellChecker: false,
+        status: false,
+    });
+
+    function updateSize() {
+        var editorHeight = editor.codemirror.getWrapperElement().offsetHeight;
+        var toolbarHeight = document.querySelector('.editor-toolbar').offsetHeight;
+
+        CustomElement.setSize({
+            height: editorHeight + toolbarHeight,
+        });
+    }
+
+    CustomElement.getValue(function (response) {
+        editor.value(response.value || '');
+    });
+
+    var editorChangeHandler;
+
+    editor.codemirror.on("change", function(){
+        if (editorChangeHandler) {clearTimeout(editorChangeHandler);}
+        editorChangeHandler = setTimeout(function() {
+            CustomElement.setValue(editor.value());
+        }, 100);
+        setTimeout(updateSize, 0);
+    });
+
+    window.addEventListener('resize', updateSize);
+    updateSize();
+</script>
+</body>
+</html>
