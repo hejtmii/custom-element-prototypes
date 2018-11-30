@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <script src="custom-element.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .content {
+            background-color: #eee;
+            border: solid 1px silver;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        h3 {
+            margin-top: 0;
+        }
+
+        .icon {
+            float: right;
+            font-size: 80px;
+            color: black;
+        }
+
+        .icon:hover {
+            color: #337ab7;
+        }
+    </style>
+</head>
+<body>
+    <div id="content" class="content">
+        <a id="iconlink" href="#" target="_blank" title="Open page builder"><i class="icon fas fa-edit"></i></a>
+        <h3>Page builder content</h3>
+        <p>
+            This element stores content of editable areas which are manageable by WYSIWYG page builder.
+        </p>
+        <a id="link" href="#" target="_blank">Open page builder</a>
+    </div>
+    <script>
+        function updateSize() {
+            CustomElement.setSize({
+                height: document.getElementById('content').offsetHeight,
+            });
+        }
+
+        function getAuthToken() {
+            // Here comes anything that gets the Auth token for the page builder
+            return '58444735-b36b-4225-9f5f-8ab53cac3a5e';
+        }
+
+        function updatePageBuilderUrl() {
+            CustomElement.getContext(function (context) {
+                var url = context.previewUrl ? context.previewUrl + '?authToken=' + getAuthToken() : '#';
+                document.getElementById('link').setAttribute('href', url)
+                document.getElementById('iconlink').setAttribute('href', url)
+            });
+        }
+
+        window.addEventListener('resize', updateSize);
+        updateSize();
+        updatePageBuilderUrl();
+    </script>
+</body>
+</html>

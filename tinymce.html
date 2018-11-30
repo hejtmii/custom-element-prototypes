@@ -19,21 +19,47 @@
     <textarea id="mce_0" aria-hidden="true">
     </textarea>
     <script>
-        tinymce.init({
-            selector: 'textarea',
-            height: 500,
-            menubar: false,
-            plugins: [
-                'advlist autolink lists link image charmap print preview anchor textcolor',
-                'searchreplace visualblocks code fullscreen',
-                'insertdatetime media table contextmenu paste code help wordcount'
-            ],
-            toolbar: 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
-            content_css: [
-            ],
-            setup: function (editor) {
-                editor.on('init', function () {
-                    var editorChangeHandler;
+        var context = null;
+        var editorInstance = null;
+
+        function updateDisabled() {
+            if (editorInstance) {
+                if (context.disabled) {
+                    editorInstance.setMode('readonly');
+                }
+                else {
+                    editorInstance.setMode('design');
+                }
+            }
+        }
+
+        function initialize() {
+            tinymce.init({
+                selector: 'textarea',
+                height: 500,
+                menubar: false,
+                plugins: [
+                    'advlist autolink lists link image charmap print preview anchor textcolor',
+                    'searchreplace visualblocks code fullscreen',
+                    'insertdatetime media table contextmenu paste code help wordcount'
+                ],
+                toolbar: 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+                content_css: [
+                ],
+                setup: function (editor) {
+                    editorInstance = editor;
+
+                    function getCurrentValue() {
+                        CustomElement.getValue(function (response) {
+                            editor.setContent(response.value || '');
+                        });
+                    }
+
+                    function setValue(value) {
+                        if (!context.disabled) {
+                            CustomElement.setValue(value);
+                        }
+                    }
 
                     function updateSize() {
                         CustomElement.setSize({
@@ -41,21 +67,33 @@
                         });
                     }
 
-                    window.addEventListener('resize', updateSize);
-                    updateSize();
+                    editor.on('init', function () {
+                        var editorChangeHandler;
 
-                    CustomElement.getValue(function (response) {
-                        editor.setContent(response.value || '');
-                    });
+                        getCurrentValue();
 
-                    editor.on('Paste Change Input Undo Redo', function() {
-                        if (editorChangeHandler) {clearTimeout(editorChangeHandler);}
-                        editorChangeHandler = setTimeout(function() {
-                            CustomElement.setValue(editor.getContent());
-                        }, 100);
+                        window.addEventListener('resize', updateSize);
+                        updateSize();
+                        updateDisabled();
+
+                        editor.on('Paste Change Input Undo Redo', function() {
+                            if (editorChangeHandler) {clearTimeout(editorChangeHandler);}
+                            editorChangeHandler = setTimeout(function() {
+                                setValue(editor.getContent());
+                            }, 100);
+                        });
                     });
-                });
+                }
+            });
+        }
+
+        CustomElement.getContext(function (ctx) {
+            var initialized = !!context;
+            context = ctx;
+            if (!initialized) {
+                initialize();
             }
+            updateDisabled();
         });
     </script>
 </body>

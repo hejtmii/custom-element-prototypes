@@ -45,138 +45,164 @@
 </head>
 <body>
 <div class="content">
-    <h4 class="title"><span class="text">Selected image</span> <button class="btn clearbtn">Clear</button></h4>
+    <h4 class="title"><span class="text">Selected image</span> <span class="clear"><button class="btn clearbtn">Clear</button></h4></span>
     <div class="value">
         <div class="display"></div>
-        <a href="#" class="url"></a>
+        <a href="#" target="_blank" class="url"></a>
     </div>
-    <form class="search">
-        <input class="searchterm form-control" /> <button class="btn btn-primary searchbtn">Search Flickr</button>  <button class="btn clearsearchbtn">Clear search</button>
-    </form>
-    <div class="results"></div>
+    <div class="search">
+        <form class="searchform">
+            <input class="searchterm form-control" /> <button class="btn btn-primary searchbtn">Search Flickr</button>  <button class="btn clearsearchbtn">Clear search</button>
+        </form>
+        <div class="results"></div>
+    </div>
 </div>
 <script>
+    var context = null;
     var currentValue = {};
 
-    function updateSize() {
-        CustomElement.setSize({
-            height: $(".content").height(),
-        });
-    }
-
-    function showValue(value, emptyValueText) {
-        var $value = $(".value");
-        var $url = $value.find(".url").hide();
-        var $display = $value.find(".display").empty();
-        var $titleText = $(".title").find(".text");
-        var $clear = $(".clearbtn").hide();
-        if (value.url) {
-            $titleText.text("Selected image");
-            $clear.show();
-            $('<img class="preview" />')
-                .attr("src", value.previewUrl)
-                .on('load', updateSize)
-                .prependTo($display);
-            $url.text(value.url)
-                .attr('href', value.url)
-                .show();
+    function updateDisabled() {
+        var elements = $(".search").add(".clear");
+        if (context.disabled) {
+            elements.hide();
         }
         else {
-            $titleText.text(emptyValueText || "Please select an image ...");
+            elements.show();
         }
-        updateSize();
     }
 
-    function updateValue(value) {
-        currentValue = value;
-        CustomElement.setValue(JSON.stringify(value));
-        showValue(value);
-    }
+    function initialize() {
+        function updateSize() {
+            CustomElement.setSize({
+                height: $(".content").height(),
+            });
+        }
 
-    function getData(searchTerm, callback) {
-        $.getJSON("https://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?",
-            {
-                tags: searchTerm,
-                tagmode: "any",
-                format: "json"
-            },
-            function(data) {
-                var items = data.items.map(
-                    function (item) {
-                        return {
-                            url: item.media.m,
-                            previewUrl: item.media.m
+        function showValue(value, emptyValueText) {
+            var $value = $(".value");
+            var $url = $value.find(".url").hide();
+            var $display = $value.find(".display").empty();
+            var $titleText = $(".title").find(".text");
+            var $clear = $(".clearbtn").hide();
+            if (value.url) {
+                $titleText.text("Selected image");
+                $clear.show();
+                $('<img class="preview" />')
+                    .attr("src", value.previewUrl)
+                    .on('load', updateSize)
+                    .prependTo($display);
+                $url.text(value.url)
+                    .attr('href', value.url)
+                    .show();
+            } else {
+                $titleText.text(emptyValueText || "Please select an image ...");
+            }
+            updateSize();
+        }
+
+        function updateValue(value) {
+            currentValue = value;
+            CustomElement.setValue(JSON.stringify(value));
+            showValue(value);
+        }
+
+        function getData(searchTerm, callback) {
+            $.getJSON("https://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?",
+                {
+                    tags: searchTerm,
+                    tagmode: "any",
+                    format: "json"
+                },
+                function (data) {
+                    var items = data.items.map(
+                        function (item) {
+                            return {
+                                url: item.media.m,
+                                previewUrl: item.media.m
+                            };
+                        }
+                    );
+                    callback(items);
+                }
+            );
+        }
+
+        function search() {
+            var searchTerm = $("input.searchterm").val();
+            getData(
+                searchTerm,
+                function (items) {
+                    var $results = $(".results").empty();
+                    $.each(items, function (i, item) {
+                        if (i >= 10) {
+                            return false;
+                        }
+
+                        var value = item;
+
+                        function select() {
+                            updateValue(value);
+                            $results.empty();
                         };
-                    }
-                );
-                callback(items);
-            }
-        );
-    }
 
-    function search(){
-        var searchTerm = $("input.searchterm").val();
-        getData(
-            searchTerm,
-            function (items) {
-                var $results = $(".results");
-                $.each(items, function (i,item) {
-                    if (i >= 10) {
-                        return false;
-                    }
-
-                    var value = item;
-                    function select() {
-                        updateValue(value);
-                        $results.empty();
-                    };
-
-                    $('<img class="preview" tabindex="0" />')
-                        .attr("src", item.previewUrl)
-                        .appendTo($results)
-                        .on('load', updateSize)
-                        .keypress(function(e) {
-                            if (e.which == 13) {
+                        $('<img class="preview" tabindex="0" />')
+                            .attr("src", item.previewUrl)
+                            .appendTo($results)
+                            .on('load', updateSize)
+                            .keypress(function (e) {
+                                if (e.which == 13) {
+                                    select();
+                                }
+                            })
+                            .click(function () {
                                 select();
-                            }
-                        })
-                        .click(function() {
-                            select();
-                        });
-                });
-            }
-        );
+                            });
+                    });
+                }
+            );
+        }
+
+        $("form.searchform").submit(function (e) {
+            e.preventDefault();
+            search();
+        });
+
+        $("button.clearbtn").click(function (e) {
+            e.preventDefault();
+            updateValue('');
+        });
+
+        $("button.clearsearchbtn").click(function (e) {
+            e.preventDefault();
+            $(".results").empty();
+            $("input.searchterm").val('');
+            updateSize();
+        });
+
+        showValue({}, 'Loading value ...');
+
+        function getCurrentValue() {
+            CustomElement.getValue(function (response) {
+                try {
+                    currentValue = response.value ? JSON.parse(response.value) : {};
+                    showValue(currentValue);
+                } catch {
+                }
+            });
+        }
+
+        window.addEventListener('resize', updateSize);
+        getCurrentValue();
     }
 
-    $("form.search").submit(function (e) {
-        e.preventDefault();
-        search();
-    });
-
-    $("button.clearbtn").click(function (e) {
-        e.preventDefault();
-       updateValue('');
-    });
-
-    $("button.clearsearchbtn").click(function (e) {
-        e.preventDefault();
-        $(".results").empty();
-        $("input.searchterm").val('');
-        updateSize();
-    });
-
-    showValue({}, 'Loading value ...');
-
-    CustomElement.getValue(function (response) {
-        try {
-            currentValue = response.value ? JSON.parse(response.value) : {};
-            showValue(currentValue);
+    CustomElement.getContext(function (ctx) {
+        var initialized = !!context;
+        context = ctx;
+        if (!initialized) {
+            initialize();
         }
-        catch {
-        }
-    });
-
-    window.addEventListener('resize', updateSize);
+        updateDisabled();
+    })
 </script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 <html>
 <head>
     <script src="custom-element.js"></script>
+    <script src="https://code.jquery.com/jquery-latest.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <style>
@@ -15,37 +16,74 @@
 <body>
 <textarea id="editor"></textarea>
 <script>
-    var editor = new SimpleMDE({
-        element: document.getElementById("editor"),
-        spellChecker: false,
-        status: false,
-    });
+    var context = null;
+    var editorInstance = null;
 
-    function updateSize() {
-        var editorHeight = editor.codemirror.getWrapperElement().offsetHeight;
-        var toolbarHeight = document.querySelector('.editor-toolbar').offsetHeight;
-
-        CustomElement.setSize({
-            height: editorHeight + toolbarHeight,
-        });
+    function updateDisabled() {
+        if (editorInstance && editorInstance.codemirror) {
+            editorInstance.codemirror.options.readOnly = !!context.disabled;
+            var elements = $('.editor-toolbar');
+            if (context.disabled) {
+                elements.hide();
+            }
+            else {
+                elements.show();
+            }
+        }
     }
 
-    CustomElement.getValue(function (response) {
-        editor.value(response.value || '');
+    function initialize() {
+        editorInstance = new SimpleMDE({
+            element: document.getElementById("editor"),
+            spellChecker: false,
+            status: false,
+        });
+
+        function updateSize() {
+            var editorHeight = editorInstance.codemirror.getWrapperElement().offsetHeight;
+            var toolbarHeight = $('.editor-toolbar').height();
+
+            CustomElement.setSize({
+                height: editorHeight + toolbarHeight,
+            });
+        }
+
+        function getCurrentValue() {
+            CustomElement.getValue(function (response) {
+                editorInstance.value(response.value || '');
+            });
+        }
+
+        function setValue(value) {
+            if (!context.disabled) {
+                CustomElement.setValue(editorInstance.value());
+            }
+        }
+
+        getCurrentValue();
+
+        var editorChangeHandler;
+
+        editorInstance.codemirror.on("change", function(){
+            if (editorChangeHandler) {clearTimeout(editorChangeHandler);}
+            editorChangeHandler = setTimeout(function() {
+                setValue(editorInstance.value());
+            }, 100);
+            setTimeout(updateSize, 0);
+        });
+
+        window.addEventListener('resize', updateSize);
+        updateSize();
+    }
+
+    CustomElement.getContext(function (ctx) {
+        var initialized = !!context;
+        context = ctx;
+        if (!initialized) {
+            initialize();
+        }
+        updateDisabled();
     });
-
-    var editorChangeHandler;
-
-    editor.codemirror.on("change", function(){
-        if (editorChangeHandler) {clearTimeout(editorChangeHandler);}
-        editorChangeHandler = setTimeout(function() {
-            CustomElement.setValue(editor.value());
-        }, 100);
-        setTimeout(updateSize, 0);
-    });
-
-    window.addEventListener('resize', updateSize);
-    updateSize();
 </script>
 </body>
 </html>
