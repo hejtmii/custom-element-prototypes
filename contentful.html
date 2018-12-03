@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="custom-element.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .cf {
+            border: none;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <iframe id="cf" class="cf"></iframe>
+    </div>
+<script>
+    var cf = document.getElementById('cf');
+    var content = document.getElementById('content');
+    var context = null;
+
+    function updateSize() {
+        CustomElement.setSize({
+            height: content.offsetHeight,
+        });
+    }
+
+    function sendToCf(method, params) {
+        cf.contentWindow.postMessage(
+            {
+                method,
+                params,
+            },
+            context.config.cfUrl
+        );
+    }
+
+    function receiveFromCf(message) {
+        switch (message.method) {
+            case 'setHeight':
+                cf.height = message.params[0];
+                updateSize();
+                break;
+
+            case 'setValue':
+                var value = message.params[2];
+                CustomElement.setValue(value ? JSON.stringify(value) : '');
+                break;
+
+            default:
+                console.log('Unhandled message', message);
+        }
+    }
+
+    function receiveMessage(message) {
+        if (message.data && message.data.method) {
+            receiveFromCf(message.data);
+        }
+    }
+
+    function sendConnect() {
+        CustomElement.getValue(function (response) {
+            var params = [
+                {
+                    id: context.element.elementId,
+                    field: {
+                        id: context.element.elementId,
+                        value: JSON.parse(response.value || ''),
+                    },
+                    locales: {
+                        'default': '00000000-0000-0000-0000-000000000000',
+                    },
+                    entry: {
+                    },
+                    fieldInfo: [],
+                },
+                [],
+            ];
+
+            sendToCf('connect', params);
+        });
+    }
+
+    function onLoad() {
+        setTimeout(sendConnect, 100);
+    }
+
+    window.addEventListener('message', receiveMessage, true);
+
+    function loadCfExtension() {
+        CustomElement.getContext(function (ctx) {
+            context = ctx;
+            var config = ctx.config;
+            if (config) {
+                var cfUrl = config.cfUrl;
+                cfConfig = config.cfConfig;
+
+                cf.setAttribute('src', cfUrl);
+                cf.addEventListener('load', onLoad);
+            }
+        });
+    }
+
+    window.addEventListener('resize', updateSize);
+    updateSize();
+    loadCfExtension();
+</script>
+</body>
+</html>

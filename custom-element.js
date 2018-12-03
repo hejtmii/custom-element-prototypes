@@ -53,6 +53,7 @@ var CustomElementClass = function() {
         },
 
         // Returns {
+        //  config: { ... } - Config JSON
         //  projectId: Uuid;
         //  itemId: ContentItemId; { itemId: Uuid, variantId: Uuid }
         //  element: ICompiledContentItemElementData { elementId: Uuid, type: string, name: string; }
