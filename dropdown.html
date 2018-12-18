@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-latest.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="custom-element.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .input {
+            width: 340px;
+            height: 40px;
+            border-radius: 5px;
+            border: solid 1px silver;
+            font-size: 16px;
+            padding: 8px;
+        }
+
+        .search {
+
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <input class="input" list="data" placeholder="Loading..." />
+        <datalist id="data" class="options">
+        </datalist>
+    </div>
+    <script>
+        function updateSize() {
+            CustomElement.setSize({
+                height: $(".content").height(),
+            });
+        }
+
+        updateSize();
+
+        var context = null;
+        var searchTimeout = null;
+        var changeTimeout = null;
+        var currentValue = null;
+        var lastSearched = null;
+
+        function updateDisabled() {
+            $(".input").attr('disabled', context.disabled);
+        }
+
+        function updateValue(value) {
+            currentValue = value;
+            var $input = $('.input');
+            if (!value) {
+                $input.val('');
+            }
+            else {
+                $input.val(currentValue.name);
+            }
+            $('.options').empty();
+            $input.blur();
+            loadOptions();
+        }
+
+        function getCurrentValue() {
+            CustomElement.getValue(function (response) {
+               updateValue(response.value && JSON.parse(response.value));
+               $('.input').attr('placeholder', 'Select value...');
+            });
+        }
+
+        function setCurrentValue(value) {
+            if (!value && !currentValue) {
+                return;
+            }
+            if (value && currentValue && value.code === currentValue.code) {
+                return;
+            }
+            updateValue(value);
+            CustomElement.setValue(value ? JSON.stringify(value) : "");
+        }
+
+        function search(name, callback) {
+            if (lastSearched === name) {
+                return;
+            }
+            lastSearched = name;
+            $.getJSON(
+                "https://restcountries.eu/rest/v2/name/" + encodeURIComponent(name) + "?fields=name;alpha3Code",
+                {},
+                function (data) {
+                    callback(data);
+                }
+            );
+        }
+
+        function loadOptions() {
+            search($('.input').val(), function (data) {
+                var $dataList = $('.options').empty();
+                var index = 0;
+                $.each(data, function (i, item) {
+                    index++;
+                    if (index <= 10) {
+                        $('<option value="' + item.name + '" data-code="' + item.alpha3Code + '" />').appendTo($dataList);
+                    }
+                    else if (index === 11) {
+                        $('<option value="..." />').appendTo($dataList);
+                    }
+                });
+            });
+        }
+
+        function changed() {
+            var value = $('.input').val();
+            if (!value) {
+                setCurrentValue(null);
+            }
+
+            var $option = $('.options option[value="' + value + '"]');
+            var code = $option.attr('data-code');
+            var name = $option.attr('value');
+            if (code && name) {
+                setCurrentValue({
+                    code,
+                    name,
+                });
+            }
+        }
+
+        function initialize() {
+            $(".input").on('keyup', function () {
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                searchTimeout = setTimeout(loadOptions, 500);
+            });
+
+            $(".input").on('change keyup', function () {
+                if (changeTimeout) {
+                    clearTimeout(changeTimeout);
+                }
+                changeTimeout = setTimeout(changed, 500);
+            });
+
+            getCurrentValue();
+            updateSize();
+        }
+
+        CustomElement.getContext(function (ctx) {
+            var initialized = !!context;
+            context = ctx;
+            if (!initialized) {
+                initialize();
+            }
+            updateDisabled();
+        });
+    </script>
+</body>
+</html>
